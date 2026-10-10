@@ -1,72 +1,15 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>IT Service Desk</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-<header class="topbar">
-  <div><p class="eyebrow">IT OPERATIONS</p><h1>Service Desk</h1><p class="subhead">Incident tracking and request management</p></div>
-  <div class="top-pill">Local demo application</div>
-</header>
-<main class="container">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}<div class="messages">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}
-  {% endwith %}
-  <section class="stats">
-    <div class="stat"><span>Total tickets</span><strong>{{ stats.total }}</strong></div>
-    <div class="stat"><span>Open</span><strong>{{ stats.open }}</strong></div>
-    <div class="stat"><span>In progress</span><strong>{{ stats.progress }}</strong></div>
-    <div class="stat"><span>Resolved / closed</span><strong>{{ stats.resolved }}</strong></div>
-  </section>
-  <section class="layout">
-    <section class="panel create-panel">
-      <div class="panel-heading"><div><p class="eyebrow">NEW RECORD</p><h2>Create a ticket</h2></div></div>
-      <form method="post" action="{{ url_for('create_ticket') }}">
-        <label for="title">Issue title *</label><input id="title" name="title" required maxlength="120" placeholder="e.g. Unable to connect to Wi-Fi">
-        <label for="requester">Requester name *</label><input id="requester" name="requester" required maxlength="80" placeholder="Name of the person reporting">
-        <label for="category">Category *</label>
-        <select id="category" name="category" required>
-          <option value="">Choose category</option><option>Hardware</option><option>Software</option><option>Network</option><option>Account / Access</option><option>Other</option>
-        </select>
-        <label for="priority">Priority</label><select id="priority" name="priority"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select>
-        <label for="description">Description *</label><textarea id="description" name="description" rows="4" required placeholder="Describe the problem and any useful details"></textarea>
-        <button class="primary" type="submit">Create ticket</button>
-      </form>
-    </section>
-    <section class="panel tickets-panel">
-      <div class="panel-heading"><div><p class="eyebrow">TICKET REGISTER</p><h2>Reported issues</h2></div><span class="count">{{ tickets|length }} shown</span></div>
-      <form class="filters" method="get" action="{{ url_for('index') }}">
-        <input name="q" value="{{ q }}" placeholder="Search title, requester, category…">
-        <select name="status"><option value="">All statuses</option>{% for s in ['Open','In Progress','Resolved','Closed'] %}<option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
-        <button class="secondary" type="submit">Filter</button><a class="reset" href="{{ url_for('index') }}">Reset</a>
-      </form>
-      {% if tickets %}
-        <div class="ticket-list">
-        {% for ticket in tickets %}
-          <article class="ticket">
-            <div class="ticket-main">
-              <div class="ticket-title-row"><h3>#{{ ticket.id }} · {{ ticket.title }}</h3><span class="priority {{ ticket.priority|lower }}">{{ ticket.priority }}</span></div>
-              <p class="description">{{ ticket.description }}</p>
-              <div class="meta"><span>{{ ticket.requester }}</span><span>{{ ticket.category }}</span><span>{{ ticket.created_at }}</span></div>
-            </div>
-            <form class="ticket-actions" method="post" action="{{ url_for('update_ticket', ticket_id=ticket.id) }}">
-              <label>Status<select name="status">{% for s in ['Open','In Progress','Resolved','Closed'] %}<option {% if ticket.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
-              <label>Priority<select name="priority">{% for p in ['Low','Medium','High','Critical'] %}<option {% if ticket.priority == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></label>
-              <button class="secondary small" type="submit">Save changes</button>
-            </form>
-            <form class="delete-form" method="post" action="{{ url_for('delete_ticket', ticket_id=ticket.id) }}" onsubmit="return confirm('Delete this ticket?');"><button class="delete" type="submit" aria-label="Delete ticket {{ ticket.id }}">Delete</button></form>
-          </article>
-        {% endfor %}
-        </div>
-      {% else %}
-        <div class="empty"><div class="empty-icon">✓</div><h3>No tickets found</h3><p>Create a ticket or change your search filters.</p></div>
-      {% endif %}
-    </section>
-  </section>
-  <footer>Academic demonstration project · Data is stored locally in SQLite</footer>
-</main>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>IT Service Desk</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body>
+<header class="topbar"><div><p class="eyebrow">IT OPERATIONS</p><h1>Service Desk</h1><p class="subhead">Incident tracking and request management</p></div><div class="account-area"><div class="top-pill">{{ current_user.role|title }} · {{ current_user.full_name }}</div><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="top-logout" type="submit">Sign out</button></form></div></header>
+<main class="container">{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="messages">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+{% if current_user.role == 'admin' %}<nav class="navline admin-nav"><span>Administrator controls</span><a href="{{ url_for('manage_users') }}">Manage accounts →</a></nav>{% endif %}
+<section class="stats"><div class="stat"><span>{{ 'My tickets' if current_user.role == 'employee' else 'Total tickets' }}</span><strong>{{ stats.total }}</strong></div><div class="stat"><span>Open</span><strong>{{ stats.open }}</strong></div><div class="stat"><span>In progress</span><strong>{{ stats.progress }}</strong></div><div class="stat"><span>Resolved / closed</span><strong>{{ stats.resolved }}</strong></div></section>
+<section class="layout"><section class="panel create-panel"><div class="panel-heading"><div><p class="eyebrow">NEW RECORD</p><h2>Create a ticket</h2></div></div><form method="post" action="{{ url_for('create_ticket') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="title">Issue title *</label><input id="title" name="title" required maxlength="120" placeholder="e.g. Unable to connect to Wi-Fi">
+{% if current_user.role != 'employee' %}<label for="requester">Requester name *</label><input id="requester" name="requester" required maxlength="80" placeholder="Name of the person reporting">{% else %}<p class="hint">Requester: {{ current_user.full_name }}</p>{% endif %}
+<label for="category">Category *</label><select id="category" name="category" required><option value="">Choose category</option><option>Hardware</option><option>Software</option><option>Network</option><option>Account / Access</option><option>Other</option></select>
+{% if current_user.role != 'employee' %}<label for="priority">Priority</label><select id="priority" name="priority"><option>Low</option><option selected>Medium</option><option>High</option><option>Critical</option></select>{% else %}<p class="hint">New tickets start at Medium priority. A support agent can review it.</p>{% endif %}
+<label for="description">Description *</label><textarea id="description" name="description" rows="4" required maxlength="5000" placeholder="Describe the problem and useful details"></textarea><button class="primary" type="submit">Create ticket</button></form></section>
+<section class="panel tickets-panel"><div class="panel-heading"><div><p class="eyebrow">TICKET REGISTER</p><h2>{{ 'My reported issues' if current_user.role == 'employee' else 'Reported issues' }}</h2></div><span class="count">{{ tickets|length }} shown</span></div><form class="filters" method="get" action="{{ url_for('index') }}"><input name="q" value="{{ q }}" placeholder="Search title, requester, category…"><select name="status"><option value="">All statuses</option>{% for s in ['Open','In Progress','Resolved','Closed'] %}<option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select><button class="secondary" type="submit">Filter</button><a class="reset" href="{{ url_for('index') }}">Reset</a></form>
+{% if tickets %}<div class="ticket-list">{% for ticket in tickets %}<article class="ticket"><div class="ticket-main"><div class="ticket-title-row"><h3>#{{ ticket.id }} · {{ ticket.title }}</h3><span class="priority {{ ticket.priority|lower }}">{{ ticket.priority }}</span></div><p class="description">{{ ticket.description }}</p><div class="meta"><span>{{ ticket.requester }}</span><span>{{ ticket.category }}</span><span>{{ ticket.created_at }}</span><span class="role-pill">{{ ticket.status }}</span></div></div>
+{% if current_user.role in ['admin', 'agent'] %}<form class="ticket-actions" method="post" action="{{ url_for('update_ticket', ticket_id=ticket.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Status<select name="status">{% for s in ['Open','In Progress','Resolved','Closed'] %}<option {% if ticket.status == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label><label>Priority<select name="priority">{% for p in ['Low','Medium','High','Critical'] %}<option {% if ticket.priority == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></label><button class="secondary small" type="submit">Save changes</button></form>{% endif %}
+{% if current_user.role == 'admin' %}<form class="delete-form" method="post" action="{{ url_for('delete_ticket', ticket_id=ticket.id) }}" onsubmit="return confirm('Delete this ticket?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="delete" type="submit" aria-label="Delete ticket {{ ticket.id }}">Delete</button></form>{% endif %}</article>{% endfor %}</div>{% else %}<div class="empty"><div class="empty-icon">✓</div><h3>No tickets found</h3><p>Create a ticket or change your search filters.</p></div>{% endif %}</section></section><footer>Academic demonstration project · Role-based access controls enabled</footer></main></body></html>
